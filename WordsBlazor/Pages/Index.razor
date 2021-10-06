@@ -1,0 +1,159 @@
+﻿@page "/"
+@using System.Collections.Generic;
+@using System.Linq;
+@using WordsBlazor.Models;
+@using WordsBlazor.Data;
+@inject NavigationManager uriHelper;
+@inject ISnackbar Snackbar
+
+
+@inject GameService GameService
+
+@switch (state)
+{
+    case State.Started:
+        {
+            <MudText Typo="Typo.h4">Добро пожаловать в игру!</MudText>
+
+            <MudButton Variant="Variant.Filled" Style="margin-bottom:7px; margin-top:5px;" Color="Color.Primary" @onclick="@(() => { Snackbar.Add(GetHintText()); })">
+                Подсказка
+            </MudButton>
+
+            <MudText Typo="Typo.body1">Составьте слово из предоставленных букв</MudText>
+
+            <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined">
+                @foreach (var item in gameCharacters)
+                {
+                    <MudButton Style="font-weight:bold" disabled="@item.IsActivated" @onclick="@(e =>  ActivateCharacter(item) )">@item.Value</MudButton>
+                }
+                <MudButton @onclick="ShuffleGameCharacters" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Shuffle" Color="Color.Error">ПЕРЕМЕШАТЬ</MudButton>
+
+            </MudButtonGroup>
+
+            <MudText Typo="Typo.h4">Ваш вариант</MudText>
+
+            <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined" OverrideStyles="false">
+                @foreach (var userCharacter in userVersion)
+                {
+                    <MudButton Style="font-weight:bold" Color="Color.Primary" Variant="Variant.Outlined">@userCharacter</MudButton>
+                }
+                @for (int i = 0; i < (gameCharacters.Count - userVersion.Count); i++)
+                {
+                    <MudButton Style="font-weight:bold" Color="Color.Primary" Variant="Variant.Outlined">*</MudButton>
+                }
+                <MudButton @onclick="ClearUserVersion" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error">СБРОС</MudButton>
+            </MudButtonGroup>
+
+            <MudPaper Width="600px" Style="padding:10px">
+                <MudText Typo="Typo.h4">Загаданные слова</MudText>
+
+                <MudList Clickable="true">
+                    @foreach (var word in game.Words)
+                    {
+                        <MudListItem Icon="@Icons.Material.Filled.GppGood" IconColor="(word.IsDone?Color.Success:Color.Default)">
+                            @foreach (var character in word.Text.ToCharArray())
+                            {
+                                <MudButton Style="font-weight:bold" Variant="Variant.Filled">@(word.IsDone? character.ToString() : "*")</MudButton>
+                            }
+                        </MudListItem>
+                    }
+                </MudList>
+            </MudPaper>
+
+            break;
+        }
+    case State.Won:
+    default:
+        {
+            <MudCard Width="600px">
+                <MudCardMedia Image="/cup-1613315_960_720.jpg" Height="200" />
+                <MudCardContent>
+                    <MudText Typo="Typo.h4">Ура, вы победили!!!</MudText>
+                    <MudText Typo="Typo.body2">Хотите сыграть еще?</MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="ReloadPage"> Еще</MudButton>
+                </MudCardActions>
+            </MudCard>
+            break;
+        }
+}
+
+@code {
+
+    private Game game;
+    private State state = State.Started;
+    private string hint = "";
+    private List<Character> gameCharacters;
+    private List<char> userVersion = new List<char> { };
+    private int emptyUserCharacter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        game = GameService.GetRandomGameData();
+
+        var chars = game.Characters.ToArray();
+
+        gameCharacters = new List<Character>(chars.Length) { };
+
+        for (int i = 0; i < chars.Length; i++)
+        {
+            gameCharacters.Add(new Character { Position = i, Value = chars[i], IsActivated = false });
+        }
+    }
+
+    void ShuffleGameCharacters()
+    {
+        Random rng = new Random();
+        gameCharacters = gameCharacters.OrderBy(a => rng.Next()).ToList();
+    }
+
+    void ActivateCharacter(Character item)
+    {
+        userVersion.Add(item.Value);
+        item.IsActivated = true;
+
+        var version = string.Concat(userVersion);
+        var word = game.Words.FirstOrDefault(x => x.Text == version);
+
+        if (word != null && !word.IsDone)
+        {
+            word.IsDone = true;
+            ClearUserVersion();
+        }
+
+        if (game.Words.All(x => x.IsDone))
+        {
+            state = State.Won;
+        }
+    }
+
+    void ClearUserVersion()
+    {
+        userVersion = new List<char> { };
+
+        foreach (var item in gameCharacters)
+        {
+            item.IsActivated = false;
+        }
+    }
+
+    void GetHint()
+    {
+        var word = game.Words.FirstOrDefault(x => !x.IsDone);
+        if (word != null)
+            hint = word.Text;
+    }
+
+    string GetHintText()
+    {
+        var word = game.Words.FirstOrDefault(x => !x.IsDone);
+        return word.Text;
+    }
+
+    void ReloadPage()
+    {
+        uriHelper.NavigateTo("/", forceLoad: true);
+    }
+
+}

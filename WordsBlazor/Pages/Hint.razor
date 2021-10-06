@@ -1,0 +1,39 @@
+﻿@page "/hints"
+@using System.Collections.Generic;
+@using WordsBlazor.Data;
+@inject NavigationManager uriHelper;
+
+@inject GameService GameService
+
+<MudText Typo="Typo.body2">Введит слово или набор букв. Нажмите "Найти", чтобы узнать какие другие слова возможно составить.</MudText>
+
+
+<MudTextField Style="margin:10px" @bind-Value="@myWord" Label="Filled" Variant="Variant.Filled" Margin="Margin.Dense"></MudTextField>
+<MudButton Style="margin:10px" @onclick="GetHints" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Search" Color="Color.Tertiary">Найти</MudButton>
+
+@if (versions.Count != 0)
+{
+    <MudTable Items="@versions" Hover="true" Breakpoint="Breakpoint.Sm" Dense="@true" Striped="@true" LoadingProgressColor="Color.Info">
+        <HeaderContent>
+            <MudTh>Слово</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Nr">@context</MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
+}
+
+@code {
+
+    private string myWord = "";
+    private List<string> versions = new List<string> { };
+
+    void GetHints()
+    {
+        versions = GameService.GetHints(myWord);
+    }
+
+}

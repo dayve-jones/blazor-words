@@ -1,0 +1,48 @@
+﻿@inherits LayoutComponentBase
+@inject IJSRuntime JsRuntime;
+
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Rounded.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        <MudAppBarSpacer />
+        <AuthorizeView>
+            <Authorized>
+                <MudMenu Icon="@Icons.Material.Filled.Usb" Color="Color.Primary">
+                    <ActivatorContent>
+                        <MudAvatar Rounded="true" Color="Color.Secondary">
+                            <MudIcon Icon="@Icons.Custom.Uncategorized.Radioactive" />
+                        </MudAvatar>
+                    </ActivatorContent>
+                    <ChildContent>
+                        <MudMenuItem>Profile</MudMenuItem>
+                        <MudMenuItem>Sign Out</MudMenuItem>
+                    </ChildContent>
+                </MudMenu>
+            </Authorized>
+        </AuthorizeView>
+        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Link="https://github.com/Garderoben/MudBlazor" Target="_blank" />
+    </MudAppBar>
+    <MudDrawer @bind-Open="@open" Elevation="1">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent Class="pt-16 px-16">
+        <MudContainer Class="mt-6">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+@code{
+    bool open = true;
+
+    void ToggleDrawer()
+    {
+        open = !open;
+    }
+
+}
+
+
